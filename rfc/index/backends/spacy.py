@@ -17,7 +17,10 @@ class SpaCyTfidfVectorizer(BaseTfidfVectorizer):
     def __init__(self, spacy_model_name: str, **kwargs) -> None:
         TfidfVectorizer.__init__(self, **kwargs)
         self.spacy_model_name = spacy_model_name
-        self.nlp = spacy.load(self.spacy_model_name)
+        self.nlp = spacy.load(
+            self.spacy_model_name,
+            disable=["parser", "ner", "tagger", "attribute_ruler"]
+        )
 
     def _tokenizer(self, texts: list[str]) -> list[list[str]]:
         new_texts = []
