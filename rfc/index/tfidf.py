@@ -6,7 +6,7 @@ import pandas as pd
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-from rfc.formats import Document, RankedDocument
+from rfc.formats import Document, RankedDocument, VectorDocument
 from rfc.index.backends.base import BaseTfidfVectorizer
 from rfc.index.base import DocQuery, Index, NameQuery, TextQuery, UrlQuery
 from rfc.scrap import scrap_single
@@ -131,52 +131,66 @@ class TfidfIndex(Index):
                 return pd.concat([non_existing_df, existing_df]).loc[urls]
             return tfidf.loc[urls]
 
+    def to_doc(
+        self, query: DocQuery | TextQuery | UrlQuery | NameQuery
+    ) -> Document:
+        all_urls = [doc.url for doc in self.docs]
+        if isinstance(query, DocQuery):
+            return query.doc
+        elif isinstance(query, TextQuery):
+            return Document(url=str(uuid4()), name="", text=query.text)
+        elif isinstance(query, UrlQuery):
+            url = query.url
+            if url in all_urls:
+                return next(filter(lambda x: x.url == url, self.docs))
+            else:
+                return scrap_single(query.url)
+        elif isinstance(query, NameQuery):
+            name = query.name
+            return next(filter(lambda x: name.lower() in x.name.lower(), self.docs))
+        else:
+            print(type(query))
+            raise NotImplementedError
+
     def query_docs(
         self,
-        queries: list[DocQuery | TextQuery | UrlQuery],
+        queries: list[DocQuery | TextQuery | UrlQuery | NameQuery],
         sort: bool = True,
         decay: Callable | None = None,
         skip_visited: bool = False
-    ) -> list[RankedDocument]:
+    ) -> tuple[list[RankedDocument], list[VectorDocument]]:
         assert (
             (len(queries) > 1 and decay is not None) or
-            (len(queries) == 1 and decay is None)
+            (len(queries) == 1)
         )
         self.check_integrity()
         all_urls = [doc.url for doc in self.docs]
 
-        docs = []
-        for query in queries:
-            if isinstance(query, DocQuery):
-                doc = query.doc
-            elif isinstance(query, TextQuery):
-                doc = Document(url=str(uuid4()), name="", text=query.text)
-            elif isinstance(query, UrlQuery):
-                url = query.url
-                if url in all_urls:
-                    doc = next(filter(lambda x: x.url == url, self.docs))
-                else:
-                    doc = scrap_single(query.url)
-            elif isinstance(query, NameQuery):
-                name = query.name
-                doc = next(filter(lambda x: name in x.name, self.docs))
-            else:
-                raise NotImplementedError
-            docs.append(doc)
-
-        tfidf = self._vectorize(docs, self.vectorizer, tfidf=self.tfidf)
+        query_docs = list(map(self.to_doc, queries))
+        tfidf = self._vectorize(query_docs, self.vectorizer, tfidf=self.tfidf)
 
         query_matrix = tfidf.to_numpy()
         tfidf_matrix = self.tfidf.loc[all_urls].to_numpy()
 
+        # (n_query_docs,n_indexed_docs)
         similarity_matrix = cosine_similarity(query_matrix, tfidf_matrix)
-        similarity_vec = similarity_matrix.mean(0)
 
         # Decay
         if decay is not None:
-            decay_vec = decay(np.arange(len(similarity_vec)))
-            similarity_vec = similarity_vec * decay_vec
+            # (n_query_docs)
+            decay_vec = decay(np.arange(similarity_matrix.shape[0]))
+            # (n_indexed_docs) = (n_indexed_docs,n_query_docs) x (n_query_docs) / (1)  # noqa: E501
+            similarity_vec = similarity_matrix.T.dot(decay_vec) / decay_vec.sum()
+        else:
+            similarity_vec = similarity_matrix[0]
 
+        vector_query_docs = list(map(
+            lambda x: VectorDocument.from_document(*x),
+            zip(
+                query_docs,
+                list(query_matrix),
+            )
+        ))
         ranked_docs = list(map(
             lambda x: RankedDocument.from_document(*x),
             zip(
@@ -189,14 +203,14 @@ class TfidfIndex(Index):
         if skip_visited:
             new_urls = (
                 set(doc.url for doc in ranked_docs) -
-                set(doc.url for doc in docs)
+                set(doc.url for doc in query_docs)
             )
             ranked_docs = [doc for doc in ranked_docs if doc.url in new_urls]
 
         if sort:
-            return sorted(ranked_docs, key=lambda x: -x.rank)
+            return sorted(ranked_docs, key=lambda x: -x.rank), vector_query_docs
         else:
-            return ranked_docs
+            return ranked_docs, vector_query_docs
 
     def check_integrity(self) -> None:
         return self.check_integrity_cls(self.tfidf, self.idf, self.docs)

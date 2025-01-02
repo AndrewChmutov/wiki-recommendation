@@ -19,7 +19,20 @@ class Document:
 
 
 @dataclass
-class RankedDocument(Document):
+class VectorDocument(Document):
+    vector: np.ndarray
+
+    @classmethod
+    def from_document(
+        cls, doc: Document, vector: np.ndarray
+    ):
+        return cls(**(
+            asdict(doc) | {"vector": vector}
+        ))
+
+
+@dataclass
+class RankedDocument(VectorDocument):
     vector: np.ndarray
     rank: float = 0.0
 

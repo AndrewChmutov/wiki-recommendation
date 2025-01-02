@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Callable
 
-from rfc.formats import Document, RankedDocument
+from rfc.formats import Document, RankedDocument, VectorDocument
 
 
 @dataclass
@@ -29,12 +29,18 @@ class Index(ABC):
     @abstractmethod
     def query_docs(
         self,
-        queries: list[DocQuery | TextQuery | UrlQuery],
+        queries: list[DocQuery | TextQuery | UrlQuery | NameQuery],
         sort: bool = True,
         decay: Callable | None = None,
         skip_visited: bool = False,
-    ) -> list[RankedDocument]:
+    ) -> tuple[list[RankedDocument], list[VectorDocument]]:
+        ...
+
+    @abstractmethod
+    def to_doc(
+        self, query: DocQuery | TextQuery | UrlQuery | NameQuery
+    ) -> Document:
         ...
 
     def query(self, query: str, sort: bool = True) -> list[RankedDocument]:
-        return self.query_docs([TextQuery(text=query)], sort=sort)
+        return self.query_docs([TextQuery(text=query)], sort=sort)[0]
