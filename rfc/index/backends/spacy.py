@@ -23,17 +23,14 @@ class SpaCyTfidfVectorizer(BaseTfidfVectorizer):
         )
 
     def _tokenizer(self, texts: list[str]) -> list[list[str]]:
-        new_texts = []
-        for text in self.nlp.pipe(
-            texts,
-            n_process=4,
-        ):
-            new_texts.append([
+        return [
+            [
                 token.lemma_
-                for token in text
+                for token in self.nlp(text)
                 if not token.is_stop and not token.is_punct
-            ])
-        return new_texts
+            ]
+            for text in texts
+        ]
 
     def __getstate__(self) -> dict[str, Any]:
         state = self.__dict__.copy()
