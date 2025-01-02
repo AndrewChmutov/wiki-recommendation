@@ -1,9 +1,4 @@
 import logging
-from collections.abc import Callable
-from functools import wraps
-from typing import Any
-
-from tqdm.contrib.logging import logging_redirect_tqdm
 
 
 class CustomFormatter(logging.Formatter):
@@ -14,7 +9,7 @@ class CustomFormatter(logging.Formatter):
     bold_red: str = "\x1b[31;1m"
     reset: str = "\x1b[0m"
     format_str: str = (
-        "%(asctime)s %(name)s(%(levelname)s) - "
+        "%(name)s(%(levelname)s) - "
         "%(message)s (%(filename)s:%(lineno)d)"
     )
 
@@ -32,27 +27,7 @@ class CustomFormatter(logging.Formatter):
         return formatter.format(record)
 
 
-def get_logger(
-    name: str = "", verbosity: int | str = logging.INFO
-) -> logging.Logger:
-    verbosity = logging._checkLevel(verbosity)
-
-    logger = logging.getLogger(name)
-    logger.setLevel(verbosity)
-
-    ch = logging.StreamHandler()
-    ch.setFormatter(CustomFormatter())
-    logger.addHandler(ch)
-
-    return logger
-
-
-def tqdm_logging(logger: logging.Logger) -> Callable:
-    def wrapped(func: Callable) -> Callable:
-        @wraps(func)
-        def wrapper(*args, **kwargs) -> Any:
-            with logging_redirect_tqdm([logger]):
-                return func(*args, **kwargs)
-        return wrapper
-    return wrapped
-
+Logger = logging.getLogger()
+_handler = logging.StreamHandler()
+_handler.setFormatter(CustomFormatter())
+Logger.addHandler(_handler)

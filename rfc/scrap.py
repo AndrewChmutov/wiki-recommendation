@@ -1,35 +1,36 @@
-import logging
 import re
 from queue import Queue
+from typing import Literal
 
 import bs4
 import inscriptis
 import requests
 from tqdm import trange
 
-from rfc.datastore import DataStore
 from rfc.formats import Document
-from rfc.utils.logging import get_logger, tqdm_logging
+from rfc.storage.base import Storage
+from rfc.utils.logging import Logger
 
-LOGGER = get_logger()
+
+def scrap_single(url: str) -> Document:
+    page = requests.get(url)
+    html = page.text
+    text = inscriptis.get_text(html)
+    text = re.sub(r"\n {3,}", "\n", text, flags=re.M)
+    text = re.sub(r"\n{3,}", "\n\n", text, flags=re.M)
+    return Document(url=url, name="", text=text)
 
 
-@tqdm_logging(LOGGER)
 def scrap(
-    datastore: DataStore | None = None,
-    starting_nodes: list[str] | None = None,
+    starting_nodes: list[str],
     limit: int = 50,
-    verbosity: int | str = logging.INFO,
-    insert: bool = True,
+    storage: Storage | None = None,
+    mode: None | Literal["append"] | Literal["overwrite"] = None,
 ) -> list[Document]:
-    if datastore is None and insert:
-        raise ValueError("Datastore is required")
-
     base = "https://datatracker.ietf.org"
     pattern = "https://datatracker.ietf.org/doc/html/rfc"
     starting_nodes = starting_nodes or ["https://datatracker.ietf.org/doc/html/rfc791"]
-    LOGGER.setLevel(verbosity)
-    LOGGER.info(f"Starting nodes: {starting_nodes}")
+    Logger.info(f"Starting nodes: {starting_nodes}")
 
     nodes = Queue()
     visited = {}
@@ -42,9 +43,15 @@ def scrap(
     iter = gen.__iter__()
     docs = []
 
-    if insert:
-        assert datastore
-        datastore.clear_docs()
+    match mode:
+        case "overwrite":
+            assert storage
+            Logger.info("Overwriting the documents")
+            storage.clear_docs()
+            storage.clear_index()
+        case "append":
+            assert storage
+            Logger.info("Appending to documents")
 
     while nodes and len(visited) < limit:
         # Get from queue
@@ -63,14 +70,14 @@ def scrap(
         ):
             continue
 
-        LOGGER.info(f"Scraping {len(visited) + 1}/{limit} - {node}")
+        Logger.debug(f"Scraping {len(visited) + 1}/{limit} - {node}")
 
         # Retrieve request
         try:
             page = requests.get(node)
         except Exception as ex:
             skipped.add(node)
-            LOGGER.warning(
+            Logger.warning(
                 f"Failed to perform a request to {node} due to exception: {ex}"
             )
             continue
@@ -78,7 +85,7 @@ def scrap(
         # Skip if error
         if not (200 <= page.status_code < 300):
             skipped.add(node)
-            LOGGER.warning(
+            Logger.warning(
                 f"Failed to perform a request to {node}, "
                 f"status code: {page.status_code}"
             )
@@ -91,7 +98,7 @@ def scrap(
             name = parser.find_all("title", limit=1)[0].string.strip()
         except IndexError:
             skipped.add(node)
-            LOGGER.warning(
+            Logger.warning(
                 f"Failed to retrieve name of the  document {node}"
             )
             continue
@@ -104,16 +111,15 @@ def scrap(
         text = inscriptis.get_text(html)
         text = re.sub(r"\n {3,}", "\n", text, flags=re.M)
         text = re.sub(r"\n{3,}", "\n\n", text, flags=re.M)
-        text = text.lower()
 
         visited[node] = (name, text)
         next(iter)
         doc = Document(node, name, text)
         docs.append(doc)
 
-        if insert:
-            assert datastore
-            datastore.insert_doc(doc)
+        if mode in ["overwrite", "append"]:
+            assert storage
+            storage.insert(doc)
 
     next(iter, None)
     gen.close()

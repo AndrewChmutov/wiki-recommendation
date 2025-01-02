@@ -5,8 +5,13 @@ dependencies = [
     "beautifulsoup4",
     "inscriptis",
     "jupyterlab",
+    "matplotlib",
+    "numpy",
+    "pandas",
     "requests",
     "scikit-learn",
+    "seaborn",
+    "spacy",
     "tqdm",
 ]
 
