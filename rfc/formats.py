@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-from typing import Self
 
 import numpy as np
 
@@ -30,7 +29,7 @@ class RankedDocument(Document):
     @classmethod
     def from_document(
         cls, doc: Document, vector: np.ndarray, rank: float
-    ) -> Self:
+    ):
         return cls(**(
             asdict(doc) | {"vector": vector, "rank": rank}
         ))

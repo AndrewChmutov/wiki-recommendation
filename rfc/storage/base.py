@@ -10,18 +10,18 @@ class By(IntFlag):
     NAME = auto()
 
 
-class Storage[T: Index](ABC):
+class Storage(ABC):
 
     @abstractmethod
     def insert(self, document: Document) -> None:
         ...
 
     @abstractmethod
-    def load(self) -> T:
+    def load(self):
         ...
 
     @abstractmethod
-    def save(self, index: T) -> None:
+    def save(self, index) -> None:
         ...
 
     @abstractmethod
