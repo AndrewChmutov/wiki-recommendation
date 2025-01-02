@@ -12,7 +12,7 @@ class Document:
     text: str
 
     def __str__(self) -> str:
-        return f'{self.__class__.__name__}(url="{self.url}", name="{self.name}", text=...)'  # noqa: E501
+        return f"{self.name}: {self.url}"
 
     def __repr__(self) -> str:
         return self.__str__()
@@ -34,6 +34,7 @@ class VectorDocument(Document):
 @dataclass
 class RankedDocument(VectorDocument):
     vector: np.ndarray
+    similarities: np.ndarray
     rank: float = 0.0
 
     def __str__(self) -> str:
@@ -41,9 +42,17 @@ class RankedDocument(VectorDocument):
 
     @classmethod
     def from_document(
-        cls, doc: Document, vector: np.ndarray, rank: float
+        cls,
+        doc: Document,
+        vector: np.ndarray,
+        rank: float,
+        similarities: np.ndarray,
     ):
         return cls(**(
-            asdict(doc) | {"vector": vector, "rank": rank}
+            asdict(doc) | {
+                "vector": vector,
+                "rank": rank,
+                "similarities": similarities
+            }
         ))
 

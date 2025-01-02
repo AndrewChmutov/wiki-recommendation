@@ -180,9 +180,11 @@ class TfidfIndex(Index):
             # (n_query_docs)
             decay_vec = decay(np.arange(similarity_matrix.shape[0]))
             # (n_indexed_docs) = (n_indexed_docs,n_query_docs) x (n_query_docs) / (1)  # noqa: E501
-            similarity_vec = similarity_matrix.T.dot(decay_vec) / decay_vec.sum()
+            similarities = similarity_matrix.T
+            similarity_vec = similarities.dot(decay_vec) / decay_vec.sum()
         else:
             similarity_vec = similarity_matrix[0]
+            similarities = np.expand_dims(similarity_vec, 1)
 
         vector_query_docs = list(map(
             lambda x: VectorDocument.from_document(*x),
@@ -197,6 +199,7 @@ class TfidfIndex(Index):
                 self.docs,
                 list(tfidf_matrix),
                 similarity_vec,
+                similarities,
             )
         ))
 
