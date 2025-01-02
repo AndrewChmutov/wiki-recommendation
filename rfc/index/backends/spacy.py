@@ -26,7 +26,7 @@ class SpaCyTfidfVectorizer(BaseTfidfVectorizer):
         new_texts = []
         for text in self.nlp.pipe(
             texts,
-            n_process=mp.cpu_count() // 2,
+            n_process=4,
         ):
             new_texts.append([
                 token.lemma_
