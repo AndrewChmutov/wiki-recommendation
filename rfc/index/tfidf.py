@@ -193,15 +193,15 @@ class TfidfIndex(Index):
                 list(query_matrix),
             )
         ))
-        ranked_docs = list(map(
-            lambda x: RankedDocument.from_document(*x),
-            zip(
+        ranked_docs = [
+            x.with_vec(vec).with_rank(rank, sims)
+            for x, vec, rank, sims in zip(
                 self.docs,
                 list(tfidf_matrix),
                 similarity_vec,
                 similarities,
             )
-        ))
+        ]
 
         if skip_visited:
             new_urls = (
