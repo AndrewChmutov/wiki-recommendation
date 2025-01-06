@@ -33,14 +33,12 @@ class Index(ABC):
         sort: bool = True,
         decay: Callable | None = None,
         skip_visited: bool = False,
-    ) -> tuple[list[RankedDocument], list[VectorDocument]]:
-        ...
+    ) -> tuple[list[RankedDocument], list[VectorDocument]]: ...
 
     @abstractmethod
     def to_doc(
         self, query: DocQuery | TextQuery | UrlQuery | NameQuery
-    ) -> Document:
-        ...
+    ) -> Document: ...
 
     def query(self, query: str, sort: bool = True) -> list[RankedDocument]:
         return self.query_docs([TextQuery(text=query)], sort=sort)[0]

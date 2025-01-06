@@ -9,8 +9,7 @@ class CustomFormatter(logging.Formatter):
     bold_red: str = "\x1b[31;1m"
     reset: str = "\x1b[0m"
     format_str: str = (
-        "%(name)s(%(levelname)s) - "
-        "%(message)s (%(filename)s:%(lineno)d)"
+        "%(name)s(%(levelname)s) - " "%(message)s (%(filename)s:%(lineno)d)"
     )
 
     FORMATS = {
@@ -18,7 +17,7 @@ class CustomFormatter(logging.Formatter):
         logging.INFO: green + format_str + reset,
         logging.WARNING: yellow + format_str + reset,
         logging.ERROR: red + format_str + reset,
-        logging.CRITICAL: bold_red + format_str + reset
+        logging.CRITICAL: bold_red + format_str + reset,
     }
 
     def format(self, record: logging.LogRecord) -> str:

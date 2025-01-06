@@ -29,7 +29,9 @@ def scrap(
 ) -> list[Document]:
     base = "https://datatracker.ietf.org"
     pattern = "https://datatracker.ietf.org/doc/html/rfc"
-    starting_nodes = starting_nodes or ["https://datatracker.ietf.org/doc/html/rfc791"]
+    starting_nodes = starting_nodes or [
+        "https://datatracker.ietf.org/doc/html/rfc791"
+    ]
     Logger.info(f"Starting nodes: {starting_nodes}")
 
     nodes = Queue()
@@ -62,10 +64,10 @@ def scrap(
             node = base + node
 
         if (
-            node in visited                  # visited
-            or node in skipped               # skipped
-            or "#" in node                   # subsection
-            or node.startswith("mailto")     # mail
+            node in visited  # visited
+            or node in skipped  # skipped
+            or "#" in node  # subsection
+            or node.startswith("mailto")  # mail
             or not node.startswith(pattern)  # match pattern
         ):
             continue
@@ -98,9 +100,7 @@ def scrap(
             name = parser.find_all("title", limit=1)[0].string.strip()
         except IndexError:
             skipped.add(node)
-            Logger.warning(
-                f"Failed to retrieve name of the  document {node}"
-            )
+            Logger.warning(f"Failed to retrieve name of the  document {node}")
             continue
 
         # Parse

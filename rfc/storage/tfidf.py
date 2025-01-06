@@ -32,6 +32,7 @@ class TfidfStorage(Storage[TfidfIndex]):
             with self.conn:
                 output = func(self, *args, **kwargs)
             return output
+
         return _wrapper
 
     @_connection
@@ -58,7 +59,7 @@ class TfidfStorage(Storage[TfidfIndex]):
             bow=bow.loc[urls],
             idf=idf,
             docs=docs,
-            vectorizer=vectorizer
+            vectorizer=vectorizer,
         )
 
     @_connection
@@ -136,9 +137,9 @@ class TfidfStorage(Storage[TfidfIndex]):
 
     def _check_table(self, name: str) -> bool:
         fetched = self.conn.execute(
-            """SELECT name FROM sqlite_master 
+            """SELECT name FROM sqlite_master
                 WHERE type='table' AND name=?;""",
-            (name,)
+            (name,),
         ).fetchone()
         return fetched is not None
 
@@ -175,7 +176,7 @@ class TfidfStorage(Storage[TfidfIndex]):
         urls, terms, values = zip(*self.conn.execute(query).fetchall())
 
         # Convert results to the dictionary
-        terms = next(map(json.loads, terms))    # (n_keys)
+        terms = next(map(json.loads, terms))  # (n_keys)
         values = list(map(json.loads, values))  # (n_keys x n_docs)
         data = {
             term: [doc_key_idx_to_value[i] for doc_key_idx_to_value in values]

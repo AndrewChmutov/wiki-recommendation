@@ -38,9 +38,7 @@ class TfidfIndex(Index):
         tfidf_vectorizer: BaseTfidfVectorizer,
     ) -> Self:
         Logger.info("Computing TF-IDF")
-        tfidf, bow = cls._vectorize(
-            docs, vectorizer=tfidf_vectorizer
-        )
+        tfidf, bow = cls._vectorize(docs, vectorizer=tfidf_vectorizer)
         Logger.info("Computing BOW")
         idf = {
             term: val
@@ -62,8 +60,7 @@ class TfidfIndex(Index):
         docs: list[Document],
         vectorizer: BaseTfidfVectorizer,
         tfidf: pd.DataFrame,
-    ) -> pd.DataFrame:
-        ...
+    ) -> pd.DataFrame: ...
 
     @overload
     @classmethod
@@ -71,8 +68,7 @@ class TfidfIndex(Index):
         cls,
         docs: list[Document],
         vectorizer: BaseTfidfVectorizer,
-    ) -> tuple[pd.DataFrame, pd.DataFrame]:
-        ...
+    ) -> tuple[pd.DataFrame, pd.DataFrame]: ...
 
     @classmethod
     def _vectorize(
@@ -98,7 +94,9 @@ class TfidfIndex(Index):
             )
 
             Logger.info("Fitting and Transforming Bow")
-            bow_data = CountVectorizer(vocabulary=tfidf_features).transform(texts)
+            bow_data = CountVectorizer(vocabulary=tfidf_features).transform(
+                texts
+            )
             assert isinstance(bow_data, csr_matrix)
             bow_data = bow_data.toarray()
             bow_features = vectorizer.get_feature_names_out()
@@ -154,7 +152,9 @@ class TfidfIndex(Index):
                 return scrap_single(query.url)
         elif isinstance(query, NameQuery):
             name = query.name
-            return next(filter(lambda x: name.lower() in x.name.lower(), self.docs))
+            return next(
+                filter(lambda x: name.lower() in x.name.lower(), self.docs)
+            )
         else:
             print(type(query))
             raise NotImplementedError
@@ -164,12 +164,9 @@ class TfidfIndex(Index):
         queries: list[DocQuery | TextQuery | UrlQuery | NameQuery],
         sort: bool = True,
         decay: Callable | None = None,
-        skip_visited: bool = False
+        skip_visited: bool = False,
     ) -> tuple[list[RankedDocument], list[VectorDocument]]:
-        assert (
-            (len(queries) > 1 and decay is not None) or
-            (len(queries) == 1)
-        )
+        assert (len(queries) > 1 and decay is not None) or (len(queries) == 1)
         self.check_integrity()
         all_urls = [doc.url for doc in self.docs]
 
@@ -193,13 +190,15 @@ class TfidfIndex(Index):
             similarity_vec = similarity_matrix[0]
             similarities = np.expand_dims(similarity_vec, 1)
 
-        vector_query_docs = list(map(
-            lambda x: VectorDocument.from_document(*x),
-            zip(
-                query_docs,
-                list(query_matrix),
+        vector_query_docs = list(
+            map(
+                lambda x: VectorDocument.from_document(*x),
+                zip(
+                    query_docs,
+                    list(query_matrix),
+                ),
             )
-        ))
+        )
         ranked_docs = [
             x.with_vec(vec).with_rank(rank, sims)
             for x, vec, rank, sims in zip(
@@ -211,14 +210,15 @@ class TfidfIndex(Index):
         ]
 
         if skip_visited:
-            new_urls = (
-                set(doc.url for doc in ranked_docs) -
-                set(doc.url for doc in query_docs)
+            new_urls = set(doc.url for doc in ranked_docs) - set(
+                doc.url for doc in query_docs
             )
             ranked_docs = [doc for doc in ranked_docs if doc.url in new_urls]
 
         if sort:
-            return sorted(ranked_docs, key=lambda x: -x.rank), vector_query_docs
+            return sorted(
+                ranked_docs, key=lambda x: -x.rank
+            ), vector_query_docs
         else:
             return ranked_docs, vector_query_docs
 

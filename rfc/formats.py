@@ -30,9 +30,7 @@ class VectorDocument(Document):
     def from_document(
         cls, doc: Document, vector: np.ndarray, **kwargs
     ) -> Self:
-        return cls(**(
-            asdict(doc) | {"vector": vector}
-        ))
+        return cls(**(asdict(doc) | {"vector": vector}))
 
     def with_rank(
         self, rank: float, similarities: np.ndarray
