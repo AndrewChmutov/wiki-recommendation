@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 from enum import IntFlag, auto
 
 from rfc.formats import Document
-from rfc.index.base import Index
 
 
 class By(IntFlag):

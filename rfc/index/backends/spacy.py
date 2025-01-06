@@ -1,5 +1,3 @@
-import math
-import multiprocessing as mp
 from typing import Any
 
 import spacy
