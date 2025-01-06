@@ -17,8 +17,8 @@ R = TypeVar("R")
 WrappedMethod = Callable[Concatenate["TfidfStorage", P], R]
 
 
-class TfidfStorage(Storage):
-    IndexType = TfidfIndex
+class TfidfStorage(Storage[TfidfIndex]):
+    type IndexType = TfidfIndex
 
     def __init__(self, db: Path | str, vectorizer_path: Path | str) -> None:
         self.conn = sqlite3.connect(db)

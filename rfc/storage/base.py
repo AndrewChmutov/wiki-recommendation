@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from enum import IntFlag, auto
 
 from rfc.formats import Document
+from rfc.index.base import Index
 
 
 class By(IntFlag):
@@ -9,18 +10,18 @@ class By(IntFlag):
     NAME = auto()
 
 
-class Storage(ABC):
+class Storage[IndexType: Index](ABC):
 
     @abstractmethod
     def insert(self, document: Document) -> None:
         ...
 
     @abstractmethod
-    def load(self):
+    def load(self) -> IndexType:
         ...
 
     @abstractmethod
-    def save(self, index) -> None:
+    def save(self, index: IndexType) -> None:
         ...
 
     @abstractmethod
