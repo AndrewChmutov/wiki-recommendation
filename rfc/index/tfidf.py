@@ -3,6 +3,7 @@ from uuid import uuid4
 
 import numpy as np
 import pandas as pd
+from scipy.sparse import csr_matrix
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -86,7 +87,9 @@ class TfidfIndex(Index):
             texts = [" ".join(ts) for ts in vectorizer._tokenizer(texts)]
             vectorizer.fit(texts)
             Logger.info("Fitting and Transforming TF-IDF")
-            tfidf_data = vectorizer.transform(texts).toarray()
+            tfidf_data = vectorizer.transform(texts)
+            assert isinstance(tfidf_data, csr_matrix)
+            tfidf_data = tfidf_data.toarray()
             tfidf_features = vectorizer.get_feature_names_out()
             tfidf = pd.DataFrame(
                 tfidf_data,
@@ -95,7 +98,9 @@ class TfidfIndex(Index):
             )
 
             Logger.info("Fitting and Transforming Bow")
-            bow_data = CountVectorizer(vocabulary=tfidf_features).transform(texts).toarray()
+            bow_data = CountVectorizer(vocabulary=tfidf_features).transform(texts)
+            assert isinstance(bow_data, csr_matrix)
+            bow_data = bow_data.toarray()
             bow_features = vectorizer.get_feature_names_out()
             bow = pd.DataFrame(
                 bow_data,
@@ -119,7 +124,9 @@ class TfidfIndex(Index):
                 texts = [" ".join(ts) for ts in vectorizer._tokenizer(texts)]
 
                 Logger.info("Transforming TF-IDF")
-                data = vectorizer.transform(texts).toarray()
+                data = vectorizer.transform(texts)
+                assert isinstance(data, csr_matrix)
+                data = data.toarray()
                 features = vectorizer.get_feature_names_out()
                 non_existing_df = pd.DataFrame(
                     data,
