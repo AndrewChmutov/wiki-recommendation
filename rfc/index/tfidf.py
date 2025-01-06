@@ -1,4 +1,4 @@
-from typing import Callable, overload
+from typing import Callable, Self, overload
 from uuid import uuid4
 
 import numpy as np
@@ -35,7 +35,7 @@ class TfidfIndex(Index):
         cls,
         docs: list[Document],
         tfidf_vectorizer: BaseTfidfVectorizer,
-    ):
+    ) -> Self:
         Logger.info("Computing TF-IDF")
         tfidf, bow = cls._vectorize(
             docs, vectorizer=tfidf_vectorizer
